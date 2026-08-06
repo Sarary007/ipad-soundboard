@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#f4f4f5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Soundboard">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title>iPad Soundboard</title>
+
+  <style>
+    :root{
+      --bg:#f4f4f5;
+      --card:#ffffff;
+      --text:#27272a;
+      --muted:#71717a;
+      --line:#d4d4d8;
+      --blue:#0891b2;
+      --red:#e11d48;
+      --green:#16a34a;
+      --dark:#18181b;
+      --shadow:0 8px 22px rgba(0,0,0,.10);
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    html, body{
+      margin:0;
+      min-height:100%;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overscroll-behavior:none;
+    }
+
+    button, input, textarea{
+      font:inherit;
+    }
+
+    button{
+      touch-action:manipulation;
+    }
+
+    .app{
+      width:min(1400px,100%);
+      margin:0 auto;
+      padding:
+        max(14px, env(safe-area-inset-top))
+        max(14px, env(safe-area-inset-right))
+        max(32px, env(safe-area-inset-bottom))
+        max(14px, env(safe-area-inset-left));
+    }
+
+    .header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(1.45rem,3vw,2.2rem);
+      line-height:1.15;
+    }
+
+    .subtitle{
+      margin:6px 0 0;
+      color:var(--muted);
+      line-height:1.45;
+      max-width:720px;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .toolbar-btn{
+      min-height:44px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:white;
+      color:var(--text);
+      padding:9px 14px;
+      font-weight:750;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+
+    .toolbar-btn.primary{
+      background:var(--dark);
+      border-color:var(--dark);
+      color:white;
+    }
+
+    .toolbar-btn.danger{
+      color:#be123c;
+      background:#fff1f2;
+      border-color:#fecdd3;
+    }
+
+    .status{
+      min-height:24px;
+      margin:10px 0 16px;
+      color:var(--muted);
+      font-weight:650;
+    }
+
+    .board{
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:26px 14px;
+    }
+
+    .pad-card{
+      min-width:0;
+      text-align:center;
+      position:relative;
+    }
+
+    .sound-pad{
+      display:block;
+      width:min(132px,100%);
+      aspect-ratio:1/1;
+      margin:0 auto 9px;
+      border:0;
+      border-radius:50%;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 34% 27%,rgba(255,255,255,.72),rgba(255,255,255,.12) 22%,transparent 24%),
+        radial-gradient(circle at 50% 45%,#ff3838,#d00000 61%,#880000);
+      box-shadow:
+        0 8px 18px rgba(0,0,0,.23),
+        inset 0 5px 9px rgba(255,255,255,.28),
+        inset 0 -8px 13px rgba(0,0,0,.24);
+      transition:transform .08s ease;
+    }
+
+    .sound-pad:active{
+      transform:scale(.94);
+    }
+
+    .sound-pad.has-image{
+      background-size:cover;
+      background-position:center;
+    }
+
+    .sound-pad.playing{
+      outline:5px solid rgba(22,163,74,.55);
+      outline-offset:3px;
+    }
+
+    .sound-pad::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      box-shadow:
+        inset 0 5px 8px rgba(255,255,255,.18),
+        inset 0 -7px 11px rgba(0,0,0,.18);
+      pointer-events:none;
+    }
+
+    .number{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      color:white;
+      font-size:2.35rem;
+      font-weight:850;
+      text-shadow:0 2px 8px rgba(0,0,0,.45);
+      pointer-events:none;
+    }
+
+    .pad-title{
+      display:block;
+      width:100%;
+      min-height:48px;
+      border:0;
+      background:transparent;
+      color:#52525b;
+      text-align:center;
+      font-size:.98rem;
+      line-height:1.32;
+      text-decoration:underline;
+      padding:2px 4px;
+      resize:none;
+    }
+
+    .pad-title:focus{
+      outline:2px solid #67e8f9;
+      background:white;
+      border-radius:8px;
+      text-decoration:none;
+    }
+
+    .icon-row{
+      display:flex;
+      justify-content:center;
+      gap:9px;
+      margin-top:6px;
+    }
+
+    .round-btn{
+      width:38px;
+      height:38px;
+      border:0;
+      border-radius:50%;
+      color:white;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+
+    .round-btn svg{
+      width:20px;
+      height:20px;
+      fill:currentColor;
+    }
+
+    .favorite-btn{ background:#e65066; }
+    .favorite-btn.active{ background:#16a34a; }
+    .settings-btn,.play-btn{ background:#22b8cf; }
+
+    .editor{
+      display:none;
+      position:relative;
+      z-index:3;
+      margin-top:10px;
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 15px 36px rgba(0,0,0,.16);
+      padding:11px;
+      text-align:left;
+    }
+
+    .pad-card.editor-open .editor{
+      display:block;
+    }
+
+    .field{
+      display:grid;
+      gap:6px;
+      margin-bottom:10px;
+    }
+
+    .field label{
+      color:var(--muted);
+      font-size:.82rem;
+      font-weight:750;
+    }
+
+    .text-input{
+      width:100%;
+      min-height:42px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:9px 10px;
+      resize:vertical;
+      background:#fafafa;
+    }
+
+    input[type="file"]{
+      position:absolute;
+      width:1px;
+      height:1px;
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .file-label{
+      display:flex;
+      min-height:42px;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:8px 10px;
+      border:1px dashed #a1a1aa;
+      border-radius:10px;
+      background:#fafafa;
+      cursor:pointer;
+      font-weight:750;
+    }
+
+    .filename{
+      min-height:18px;
+      color:var(--muted);
+      font-size:.76rem;
+      overflow-wrap:anywhere;
+    }
+
+    .editor-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .small-btn{
+      min-height:40px;
+      border:0;
+      border-radius:10px;
+      font-weight:750;
+      cursor:pointer;
+      background:#e4e4e7;
+      color:var(--text);
+    }
+
+    .small-btn.danger{
+      background:#fff1f2;
+      color:#be123c;
+    }
+
+    .unlock{
+      position:fixed;
+      inset:0;
+      z-index:999;
+      display:grid;
+      place-items:center;
+      padding:22px;
+      background:rgba(24,24,27,.82);
+      backdrop-filter:blur(10px);
+    }
+
+    .unlock.hidden{
+      display:none;
+    }
+
+    .unlock-card{
+      width:min(440px,100%);
+      background:white;
+      border-radius:22px;
+      padding:24px;
+      text-align:center;
+      box-shadow:0 25px 70px rgba(0,0,0,.38);
+    }
+
+    .unlock-icon{
+      width:94px;
+      height:94px;
+      margin:0 auto 12px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      font-size:2.5rem;
+      background:#e0f2fe;
+    }
+
+    .unlock-card h2{
+      margin:0 0 8px;
+      font-size:1.55rem;
+    }
+
+    .unlock-card p{
+      margin:0 0 18px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .unlock-btn{
+      width:100%;
+      min-height:52px;
+      border:0;
+      border-radius:14px;
+      background:var(--dark);
+      color:white;
+      font-size:1.05rem;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .install-note{
+      margin-top:22px;
+      text-align:center;
+      color:var(--muted);
+      font-size:.88rem;
+      line-height:1.55;
+    }
+
+    @media (max-width:1100px){
+      .board{grid-template-columns:repeat(5,minmax(0,1fr))}
+    }
+
+    @media (max-width:850px){
+      .board{grid-template-columns:repeat(4,minmax(0,1fr))}
+    }
+
+    @media (max-width:620px){
+      .board{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:22px 10px;
+      }
+      .sound-pad{
+        width:min(112px,100%);
+      }
+      .pad-title{
+        font-size:.9rem;
+      }
+    }
+
+    @media (max-width:410px){
+      .board{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media (orientation:landscape) and (min-width:900px){
+      .board{grid-template-columns:repeat(8,minmax(0,1fr))}
+      .sound-pad{width:min(118px,100%)}
+    }
+  </style>
+</head>
+
+<body>
+  <div id="unlock" class="unlock">
+    <div class="unlock-card">
+      <div class="unlock-icon">🔊</div>
+      <h2>เปิดระบบเสียงบน iPad</h2>
+      <p>แตะปุ่มนี้หนึ่งครั้งก่อนใช้งาน เพื่อให้ Safari อนุญาตให้แอปเล่นเสียง</p>
+      <button id="unlockBtn" class="unlock-btn" type="button">แตะเพื่อเริ่มใช้งาน</button>
+    </div>
+  </div>
+
+  <main class="app">
+    <header class="header">
+      <div>
+        <h1>Soundboard รูปภาพ</h1>
+        <p class="subtitle">แตะรูปเพื่อเล่นเสียง แต่ละปุ่มเปลี่ยนชื่อ เลือกรูป และเลือกเสียงของตัวเองได้</p>
+      </div>
+
+      <div class="toolbar">
+        <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
+        <button id="stopBtn" class="toolbar-btn" type="button">หยุดเสียง</button>
+        <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
+      </div>
+    </header>
+
+    <div id="status" class="status">กำลังโหลดข้อมูล…</div>
+    <section id="board" class="board" aria-label="ปุ่มเสียง"></section>
+
+    <p class="install-note">
+      เปิดผ่าน Safari แล้วเลือก แชร์ → เพิ่มไปยังหน้าจอโฮม → เปิดเป็นเว็บแอป
+    </p>
+  </main>
+
+<script>
+(() => {
+  "use strict";
+
+  const PAD_COUNT = 18;
+  const DB_NAME = "ipad-image-soundboard";
+  const STORE_NAME = "pads";
+  const DB_VERSION = 1;
+
+  const board = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const editModeBtn = document.getElementById("editModeBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  const clearAllBtn = document.getElementById("clearAllBtn");
+  const unlock = document.getElementById("unlock");
+  const unlockBtn = document.getElementById("unlockBtn");
+
+  const states = new Map();
+  let editMode = false;
+  let audioContext = null;
+
+  function setStatus(message){
+    statusEl.textContent = message;
+  }
+
+  function openDatabase(){
+    return new Promise((resolve, reject) => {
+      if(!("indexedDB" in window)){
+        reject(new Error("IndexedDB unavailable"));
+        return;
+      }
+
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)){
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Database error"));
+    });
+  }
+
+  async function dbGet(key){
+    const db = await openDatabase();
+    try{
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const request = tx.objectStore(STORE_NAME).get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function dbPut(key, value){
+    const db = await openDatabase();
+    try{
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function dbDelete(key){
+    const db = await openDatabase();
+    try{
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function dbClear(){
+    const db = await openDatabase();
+    try{
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function unlockAudio(){
+    try{
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if(AudioCtx){
+        audioContext = audioContext || new AudioCtx();
+        if(audioContext.state === "suspended"){
+          await audioContext.resume();
+        }
+
+        const buffer = audioContext.createBuffer(1, 1, 22050);
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+      }
+
+      unlock.classList.add("hidden");
+      sessionStorage.setItem("soundboard-audio-unlocked", "1");
+      setStatus("พร้อมใช้งาน");
+    } catch(error){
+      console.error(error);
+      unlock.classList.add("hidden");
+      setStatus("พร้อมใช้งาน — หากไม่มีเสียง ให้แตะปุ่มอีกครั้ง");
+    }
+  }
+
+  unlockBtn.addEventListener("click", unlockAudio);
+
+  function iconHeart(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.7-4.4-9.2-8C.3 10 1 6.6 3.8 5c2.2-1.2 4.9-.4 6.2 1.5C11.3 4.6 14 3.8 16.2 5 19 6.6 19.7 10 21.2 13 18.7 16.6 12 21 12 21z"/></svg>';
+  }
+
+  function iconSettings(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 .1-1 7.6 7.6 0 0 0-.1-1l2.1-1.6-2-3.4-2.5 1a8 8 0 0 0-1.7-1L15 3h-4l-.4 3a8 8 0 0 0-1.7 1L6.5 6l-2 3.4L6.6 11a7.6 7.6 0 0 0-.1 1c0 .3 0 .7.1 1l-2.1 1.6 2 3.4 2.5-1a8 8 0 0 0 1.7 1l.4 3h4l.4-3a8 8 0 0 0 1.7-1l2.5 1 2-3.4L19.4 13zM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5z"/></svg>';
+  }
+
+  function iconPlay(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  }
+
+  function stopAll(updateStatus = true){
+    for(const state of states.values()){
+      state.audio.pause();
+      try{ state.audio.currentTime = 0; }catch(_){}
+      state.soundPad.classList.remove("playing");
+    }
+    if(updateStatus) setStatus("หยุดเสียงแล้ว");
+  }
+
+  function createPad(index){
+    const id = `pad-${index + 1}`;
+    const defaultTitle = `ปุ่มเสียง ${index + 1}`;
+
+    const card = document.createElement("article");
+    card.className = "pad-card";
+    card.innerHTML = `
+      <button class="sound-pad" type="button" aria-label="เล่น ${defaultTitle}">
+        <span class="number">${index + 1}</span>
+      </button>
+
+      <textarea class="pad-title" rows="2" maxlength="50" spellcheck="false">${defaultTitle}</textarea>
+
+      <div class="icon-row">
+        <button class="round-btn favorite-btn" type="button" title="รายการโปรด">${iconHeart()}</button>
+        <button class="round-btn settings-btn" type="button" title="ตั้งค่า">${iconSettings()}</button>
+        <button class="round-btn play-btn" type="button" title="เล่น">${iconPlay()}</button>
+      </div>
+
+      <section class="editor">
+        <div class="field">
+          <label>ชื่อปุ่ม</label>
+          <textarea class="text-input title-editor" rows="2" maxlength="50">${defaultTitle}</textarea>
+        </div>
+
+        <div class="field">
+          <label for="image-${id}">รูปภาพปุ่ม</label>
+          <label class="file-label" for="image-${id}">เลือกรูปจาก Photos หรือ Files</label>
+          <input id="image-${id}" class="image-input" type="file" accept="image/*">
+          <div class="filename image-name">ยังไม่ได้เลือกรูป</div>
+        </div>
+
+        <div class="field">
+          <label for="audio-${id}">ไฟล์เสียง</label>
+          <label class="file-label" for="audio-${id}">เลือกเสียงจาก Files</label>
+          <input id="audio-${id}" class="audio-input" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg">
+          <div class="filename audio-name">ยังไม่ได้เลือกเสียง</div>
+        </div>
+
+        <div class="editor-actions">
+          <button class="small-btn test-btn" type="button">ทดสอบ</button>
+          <button class="small-btn danger clear-btn" type="button">ล้างปุ่มนี้</button>
+        </div>
+      </section>
+    `;
+
+    const soundPad = card.querySelector(".sound-pad");
+    const number = card.querySelector(".number");
+    const padTitle = card.querySelector(".pad-title");
+    const favoriteBtn = card.querySelector(".favorite-btn");
+    const settingsBtn = card.querySelector(".settings-btn");
+    const playBtn = card.querySelector(".play-btn");
+    const titleEditor = card.querySelector(".title-editor");
+    const imageInput = card.querySelector(".image-input");
+    const audioInput = card.querySelector(".audio-input");
+    const imageName = card.querySelector(".image-name");
+    const audioName = card.querySelector(".audio-name");
+    const testBtn = card.querySelector(".test-btn");
+    const clearBtn = card.querySelector(".clear-btn");
+
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    audio.setAttribute("playsinline", "");
+
+    const state = {
+      id, card, soundPad, number, padTitle, favoriteBtn, settingsBtn, playBtn,
+      titleEditor, imageInput, audioInput, imageName, audioName, testBtn, clearBtn,
+      audio, defaultTitle,
+      title: defaultTitle,
+      favorite: false,
+      imageBlob: null,
+      imageFilename: "",
+      audioBlob: null,
+      audioFilename: "",
+      imageUrl: "",
+      audioUrl: ""
+    };
+
+    states.set(id, state);
+
+    function setTitle(value){
+      const clean = String(value || "").trim() || defaultTitle;
+      state.title = clean;
+      padTitle.value = clean;
+      titleEditor.value = clean;
+      soundPad.setAttribute("aria-label", `เล่น ${clean}`);
+    }
+
+    function setFavorite(value){
+      state.favorite = Boolean(value);
+      favoriteBtn.classList.toggle("active", state.favorite);
+    }
+
+    function setImage(blob, filename){
+      if(state.imageUrl){
+        URL.revokeObjectURL(state.imageUrl);
+        state.imageUrl = "";
+      }
+
+      state.imageBlob = blob || null;
+      state.imageFilename = filename || "";
+
+      if(blob){
+        state.imageUrl = URL.createObjectURL(blob);
+        soundPad.style.backgroundImage = `url("${state.imageUrl}")`;
+        soundPad.classList.add("has-image");
+        number.hidden = true;
+        imageName.textContent = filename || "เลือกรูปแล้ว";
+      }else{
+        soundPad.style.backgroundImage = "";
+        soundPad.classList.remove("has-image");
+        number.hidden = false;
+        imageName.textContent = "ยังไม่ได้เลือกรูป";
+      }
+    }
+
+    function setAudio(blob, filename){
+      if(state.audioUrl){
+        URL.revokeObjectURL(state.audioUrl);
+        state.audioUrl = "";
+      }
+
+      audio.pause();
+      try{ audio.currentTime = 0; }catch(_){}
+
+      state.audioBlob = blob || null;
+      state.audioFilename = filename || "";
+
+      if(blob){
+        state.audioUrl = URL.createObjectURL(blob);
+        audio.src = state.audioUrl;
+        audio.load();
+        audioName.textContent = filename || "เลือกเสียงแล้ว";
+      }else{
+        audio.removeAttribute("src");
+        audio.load();
+        audioName.textContent = "ยังไม่ได้เลือกเสียง";
+      }
+
+      soundPad.classList.remove("playing");
+    }
+
+    async function persist(){
+      await dbPut(id, {
+        title: state.title,
+        favorite: state.favorite,
+        imageBlob: state.imageBlob,
+        imageFilename: state.imageFilename,
+        audioBlob: state.audioBlob,
+        audioFilename: state.audioFilename,
+        updatedAt: Date.now()
+      });
+    }
+
+    async function playSound(){
+      if(!state.audioBlob || !audio.src){
+        setStatus(`"${state.title}" ยังไม่ได้เลือกไฟล์เสียง`);
+        if(editMode) card.classList.add("editor-open");
+        return;
+      }
+
+      try{
+        if(audioContext && audioContext.state === "suspended"){
+          await audioContext.resume();
+        }
+
+        stopAll(false);
+        audio.currentTime = 0;
+        const promise = audio.play();
+        if(promise) await promise;
+
+        soundPad.classList.add("playing");
+        setStatus(`กำลังเล่น: ${state.title}`);
+      }catch(error){
+        console.error(error);
+        setStatus("iPad ไม่อนุญาตให้เล่นเสียง กรุณาแตะ “เปิดระบบเสียง” แล้วลองใหม่");
+        unlock.classList.remove("hidden");
+      }
+    }
+
+    soundPad.addEventListener("click", playSound);
+    playBtn.addEventListener("click", playSound);
+    testBtn.addEventListener("click", playSound);
+
+    audio.addEventListener("ended", () => {
+      soundPad.classList.remove("playing");
+      setStatus("พร้อมใช้งาน");
+    });
+
+    audio.addEventListener("pause", () => {
+      if(audio.currentTime === 0 || audio.ended){
+        soundPad.classList.remove("playing");
+      }
+    });
+
+    favoriteBtn.addEventListener("click", async () => {
+      setFavorite(!state.favorite);
+      try{
+        await persist();
+      }catch(error){
+        console.error(error);
+        setStatus("บันทึกรายการโปรดไม่สำเร็จ");
+      }
+    });
+
+    settingsBtn.addEventListener("click", () => {
+      if(!editMode){
+        editMode = true;
+        editModeBtn.textContent = "ปิดโหมดแก้ไข";
+      }
+      card.classList.toggle("editor-open");
+      setStatus(card.classList.contains("editor-open") ? `กำลังตั้งค่า: ${state.title}` : "พร้อมใช้งาน");
+    });
+
+    padTitle.addEventListener("input", async () => {
+      setTitle(padTitle.value);
+      try{
+        await persist();
+      }catch(error){
+        console.error(error);
+      }
+    });
+
+    titleEditor.addEventListener("input", async () => {
+      setTitle(titleEditor.value);
+      try{
+        await persist();
+      }catch(error){
+        console.error(error);
+      }
+    });
+
+    imageInput.addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if(!file) return;
+
+      if(!file.type.startsWith("image/")){
+        alert("กรุณาเลือกรูปภาพ");
+        imageInput.value = "";
+        return;
+      }
+
+      setImage(file, file.name);
+
+      try{
+        await persist();
+        setStatus(`บันทึกรูปของ "${state.title}" แล้ว`);
+      }catch(error){
+        console.error(error);
+        setStatus("บันทึกรูปไม่สำเร็จ พื้นที่จัดเก็บของ Safari อาจเต็ม");
+      }
+    });
+
+    audioInput.addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if(!file) return;
+
+      const allowed = file.type.startsWith("audio/") || /\.(mp3|m4a|wav|aac|ogg)$/i.test(file.name);
+      if(!allowed){
+        alert("กรุณาเลือกไฟล์ MP3, M4A, WAV, AAC หรือ OGG");
+        audioInput.value = "";
+        return;
+      }
+
+      setAudio(file, file.name);
+
+      try{
+        await persist();
+        setStatus(`บันทึกเสียงของ "${state.title}" แล้ว`);
+      }catch(error){
+        console.error(error);
+        setStatus("บันทึกเสียงไม่สำเร็จ ลองใช้ไฟล์เสียงขนาดเล็กลง");
+      }
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      if(!confirm(`ล้างรูปและเสียงของ "${state.title}" หรือไม่?`)) return;
+
+      setTitle(defaultTitle);
+      setFavorite(false);
+      setImage(null, "");
+      setAudio(null, "");
+      imageInput.value = "";
+      audioInput.value = "";
+      card.classList.remove("editor-open");
+
+      try{
+        await dbDelete(id);
+        setStatus(`ล้างปุ่ม ${index + 1} แล้ว`);
+      }catch(error){
+        console.error(error);
+        setStatus("ล้างข้อมูลไม่สำเร็จ");
+      }
+    });
+
+    async function load(){
+      try{
+        const saved = await dbGet(id);
+
+        if(saved){
+          setTitle(saved.title || defaultTitle);
+          setFavorite(saved.favorite);
+          setImage(saved.imageBlob || null, saved.imageFilename || "");
+          setAudio(saved.audioBlob || null, saved.audioFilename || "");
+        }else{
+          setTitle(defaultTitle);
+          setFavorite(false);
+          setImage(null, "");
+          setAudio(null, "");
+        }
+      }catch(error){
+        console.error(error);
+        setStatus("Safari ไม่สามารถเปิดพื้นที่จัดเก็บได้ แต่ยังเลือกไฟล์และเล่นชั่วคราวได้");
+      }
+    }
+
+    board.appendChild(card);
+    load();
+  }
+
+  for(let i = 0; i < PAD_COUNT; i++){
+    createPad(i);
+  }
+
+  editModeBtn.addEventListener("click", () => {
+    editMode = !editMode;
+    editModeBtn.textContent = editMode ? "ปิดโหมดแก้ไข" : "เปิดโหมดแก้ไข";
+
+    if(!editMode){
+      document.querySelectorAll(".pad-card.editor-open").forEach(card => {
+        card.classList.remove("editor-open");
+      });
+      setStatus("ปิดโหมดแก้ไขแล้ว");
+    }else{
+      setStatus("กดปุ่มรูปเฟืองใต้ปุ่มที่ต้องการตั้งค่า");
+    }
+  });
+
+  stopBtn.addEventListener("click", () => stopAll(true));
+
+  clearAllBtn.addEventListener("click", async () => {
+    if(!confirm("ล้างชื่อ รูป และเสียงของทุกปุ่มหรือไม่?")) return;
+
+    stopAll(false);
+
+    try{
+      await dbClear();
+
+      for(const state of states.values()){
+        if(state.imageUrl) URL.revokeObjectURL(state.imageUrl);
+        if(state.audioUrl) URL.revokeObjectURL(state.audioUrl);
+
+        state.imageUrl = "";
+        state.audioUrl = "";
+        state.imageBlob = null;
+        state.audioBlob = null;
+        state.imageFilename = "";
+        state.audioFilename = "";
+        state.title = state.defaultTitle;
+        state.favorite = false;
+
+        state.padTitle.value = state.defaultTitle;
+        state.titleEditor.value = state.defaultTitle;
+        state.favoriteBtn.classList.remove("active");
+        state.soundPad.style.backgroundImage = "";
+        state.soundPad.classList.remove("has-image", "playing");
+        state.number.hidden = false;
+        state.imageName.textContent = "ยังไม่ได้เลือกรูป";
+        state.audioName.textContent = "ยังไม่ได้เลือกเสียง";
+        state.imageInput.value = "";
+        state.audioInput.value = "";
+        state.audio.pause();
+        state.audio.removeAttribute("src");
+        state.audio.load();
+        state.card.classList.remove("editor-open");
+      }
+
+      setStatus("ล้างข้อมูลทั้งหมดแล้ว");
+    }catch(error){
+      console.error(error);
+      setStatus("ล้างข้อมูลทั้งหมดไม่สำเร็จ");
+    }
+  });
+
+  if(sessionStorage.getItem("soundboard-audio-unlocked") === "1"){
+    unlock.classList.add("hidden");
+  }
+
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(console.error);
+    });
+  }
+
+  Promise.all(Array.from(states.values()).map(() => Promise.resolve()))
+    .then(() => setTimeout(() => {
+      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
+        setStatus("พร้อมใช้งาน");
+      }
+    }, 600));
+})();
+</script>
+</body>
+</html>
