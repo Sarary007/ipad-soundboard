@@ -109,11 +109,26 @@
       border-color:#fecdd3;
     }
 
+    .edit-only{
+      display:none;
+    }
+
+    body.edit-mode .edit-only{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
     .status{
+      display:none;
       min-height:24px;
       margin:10px 0 16px;
       color:var(--muted);
       font-weight:650;
+    }
+
+    body.edit-mode .status{
+      display:block;
     }
 
     .board{
@@ -173,18 +188,6 @@
       pointer-events:none;
     }
 
-    .number{
-      position:absolute;
-      inset:0;
-      display:grid;
-      place-items:center;
-      color:white;
-      font-size:2.35rem;
-      font-weight:850;
-      text-shadow:0 2px 8px rgba(0,0,0,.45);
-      pointer-events:none;
-    }
-
     .pad-title{
       display:block;
       width:100%;
@@ -195,23 +198,21 @@
       text-align:center;
       font-size:.98rem;
       line-height:1.32;
-      text-decoration:underline;
       padding:2px 4px;
       resize:none;
-    }
-
-    .pad-title:focus{
-      outline:2px solid #67e8f9;
-      background:white;
-      border-radius:8px;
-      text-decoration:none;
+      pointer-events:none;
+      overflow:hidden;
     }
 
     .icon-row{
-      display:flex;
+      display:none;
       justify-content:center;
       gap:9px;
       margin-top:6px;
+    }
+
+    body.edit-mode .icon-row{
+      display:flex;
     }
 
     .round-btn{
@@ -384,6 +385,86 @@
       cursor:pointer;
     }
 
+    .password-modal{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:grid;
+      place-items:center;
+      padding:22px;
+      background:rgba(24,24,27,.72);
+      backdrop-filter:blur(8px);
+    }
+
+    .password-modal.hidden{
+      display:none;
+    }
+
+    .password-card{
+      width:min(390px,100%);
+      background:white;
+      border-radius:20px;
+      padding:22px;
+      box-shadow:0 25px 70px rgba(0,0,0,.35);
+    }
+
+    .password-card h2{
+      margin:0 0 8px;
+      text-align:center;
+    }
+
+    .password-card p{
+      margin:0 0 16px;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.45;
+    }
+
+    .password-input{
+      width:100%;
+      min-height:52px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 14px;
+      text-align:center;
+      font-size:1.25rem;
+      letter-spacing:.18em;
+      background:#fafafa;
+    }
+
+    .password-error{
+      min-height:22px;
+      margin:8px 0 0;
+      color:#be123c;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .password-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-top:12px;
+    }
+
+    .password-actions button{
+      min-height:46px;
+      border:0;
+      border-radius:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .password-cancel{
+      background:#e4e4e7;
+      color:var(--text);
+    }
+
+    .password-submit{
+      background:var(--dark);
+      color:white;
+    }
+
     .install-note{
       margin-top:22px;
       text-align:center;
@@ -422,42 +503,6 @@
       .sound-pad{width:min(118px,100%)}
     }
   </style>
-<style id="secure-edit-style">
-  .number{display:none!important}
-  .pad-title{
-    text-decoration:none!important;
-    pointer-events:none!important;
-    resize:none!important;
-    overflow:hidden!important;
-  }
-  .icon-row,
-  #stopBtn,
-  #clearAllBtn,
-  .status,
-  .install-note{
-    display:none!important;
-  }
-  body:not(.secure-edit-mode) .header > div:first-child{
-    display:none!important;
-  }
-  body:not(.secure-edit-mode) .header{
-    justify-content:flex-end!important;
-    margin-bottom:14px!important;
-  }
-  body.secure-edit-mode .icon-row{
-    display:flex!important;
-  }
-  body.secure-edit-mode #stopBtn,
-  body.secure-edit-mode #clearAllBtn{
-    display:inline-flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-  }
-  body.secure-edit-mode .status,
-  body.secure-edit-mode .install-note{
-    display:block!important;
-  }
-</style>
 </head>
 
 <body>
@@ -470,6 +515,19 @@
     </div>
   </div>
 
+  <div id="passwordModal" class="password-modal hidden" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+    <form id="passwordForm" class="password-card">
+      <h2 id="passwordTitle">ใส่รหัสเพื่อแก้ไข</h2>
+      <p>ต้องใส่รหัสทุกครั้งก่อนเปิดโหมดแก้ไข</p>
+      <input id="passwordInput" class="password-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="รหัสแก้ไข">
+      <div id="passwordError" class="password-error" aria-live="polite"></div>
+      <div class="password-actions">
+        <button id="passwordCancel" class="password-cancel" type="button">ยกเลิก</button>
+        <button class="password-submit" type="submit">ยืนยัน</button>
+      </div>
+    </form>
+  </div>
+
   <main class="app">
     <header class="header">
       <div>
@@ -478,9 +536,9 @@
       </div>
 
       <div class="toolbar">
-        <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
-        <button id="stopBtn" class="toolbar-btn" type="button">หยุดเสียง</button>
-        <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
+        <button id="editModeBtn" class="toolbar-btn primary" type="button">แก้ไข</button>
+        <button id="stopBtn" class="toolbar-btn edit-only" type="button">หยุดเสียง</button>
+        <button id="clearAllBtn" class="toolbar-btn danger edit-only" type="button">ล้างทั้งหมด</button>
       </div>
     </header>
 
@@ -506,10 +564,16 @@
   const editModeBtn = document.getElementById("editModeBtn");
   const stopBtn = document.getElementById("stopBtn");
   const clearAllBtn = document.getElementById("clearAllBtn");
+  const passwordModal = document.getElementById("passwordModal");
+  const passwordForm = document.getElementById("passwordForm");
+  const passwordInput = document.getElementById("passwordInput");
+  const passwordError = document.getElementById("passwordError");
+  const passwordCancel = document.getElementById("passwordCancel");
   const unlock = document.getElementById("unlock");
   const unlockBtn = document.getElementById("unlockBtn");
 
   const states = new Map();
+  const EDIT_PASSWORD = "1234";
   let editMode = false;
   let audioContext = null;
 
@@ -651,11 +715,9 @@
     const card = document.createElement("article");
     card.className = "pad-card";
     card.innerHTML = `
-      <button class="sound-pad" type="button" aria-label="เล่น ${defaultTitle}">
-        <span class="number">${index + 1}</span>
-      </button>
+      <button class="sound-pad" type="button" aria-label="เล่น ${defaultTitle}"></button>
 
-      <textarea class="pad-title" rows="2" maxlength="50" spellcheck="false">${defaultTitle}</textarea>
+      <textarea class="pad-title" rows="2" maxlength="50" spellcheck="false" readonly>${defaultTitle}</textarea>
 
       <div class="icon-row">
         <button class="round-btn favorite-btn" type="button" title="รายการโปรด">${iconHeart()}</button>
@@ -691,7 +753,6 @@
     `;
 
     const soundPad = card.querySelector(".sound-pad");
-    const number = card.querySelector(".number");
     const padTitle = card.querySelector(".pad-title");
     const favoriteBtn = card.querySelector(".favorite-btn");
     const settingsBtn = card.querySelector(".settings-btn");
@@ -709,7 +770,7 @@
     audio.setAttribute("playsinline", "");
 
     const state = {
-      id, card, soundPad, number, padTitle, favoriteBtn, settingsBtn, playBtn,
+      id, card, soundPad, padTitle, favoriteBtn, settingsBtn, playBtn,
       titleEditor, imageInput, audioInput, imageName, audioName, testBtn, clearBtn,
       audio, defaultTitle,
       title: defaultTitle,
@@ -750,12 +811,10 @@
         state.imageUrl = URL.createObjectURL(blob);
         soundPad.style.backgroundImage = `url("${state.imageUrl}")`;
         soundPad.classList.add("has-image");
-        number.hidden = true;
         imageName.textContent = filename || "เลือกรูปแล้ว";
       }else{
         soundPad.style.backgroundImage = "";
         soundPad.classList.remove("has-image");
-        number.hidden = false;
         imageName.textContent = "ยังไม่ได้เลือกรูป";
       }
     }
@@ -850,21 +909,9 @@
     });
 
     settingsBtn.addEventListener("click", () => {
-      if(!editMode){
-        editMode = true;
-        editModeBtn.textContent = "ปิดโหมดแก้ไข";
-      }
+      if(!editMode) return;
       card.classList.toggle("editor-open");
       setStatus(card.classList.contains("editor-open") ? `กำลังตั้งค่า: ${state.title}` : "พร้อมใช้งาน");
-    });
-
-    padTitle.addEventListener("input", async () => {
-      setTitle(padTitle.value);
-      try{
-        await persist();
-      }catch(error){
-        console.error(error);
-      }
     });
 
     titleEditor.addEventListener("input", async () => {
@@ -968,18 +1015,60 @@
     createPad(i);
   }
 
-  editModeBtn.addEventListener("click", () => {
-    editMode = !editMode;
-    editModeBtn.textContent = editMode ? "ปิดโหมดแก้ไข" : "เปิดโหมดแก้ไข";
+  function openPasswordModal(){
+    passwordInput.value = "";
+    passwordError.textContent = "";
+    passwordModal.classList.remove("hidden");
+    setTimeout(() => passwordInput.focus(), 50);
+  }
 
-    if(!editMode){
-      document.querySelectorAll(".pad-card.editor-open").forEach(card => {
-        card.classList.remove("editor-open");
-      });
-      setStatus("ปิดโหมดแก้ไขแล้ว");
+  function closePasswordModal(){
+    passwordModal.classList.add("hidden");
+    passwordInput.value = "";
+    passwordError.textContent = "";
+  }
+
+  function enterEditMode(){
+    editMode = true;
+    document.body.classList.add("edit-mode");
+    editModeBtn.textContent = "ปิดการแก้ไข";
+    closePasswordModal();
+    setStatus("โหมดแก้ไขเปิดอยู่ — กดรูปเฟืองใต้ปุ่มที่ต้องการตั้งค่า");
+  }
+
+  function exitEditMode(){
+    editMode = false;
+    document.body.classList.remove("edit-mode");
+    editModeBtn.textContent = "แก้ไข";
+    document.querySelectorAll(".pad-card.editor-open").forEach(card => {
+      card.classList.remove("editor-open");
+    });
+    stopAll(false);
+    setStatus("ปิดโหมดแก้ไขแล้ว");
+  }
+
+  editModeBtn.addEventListener("click", () => {
+    if(editMode){
+      exitEditMode();
     }else{
-      setStatus("กดปุ่มรูปเฟืองใต้ปุ่มที่ต้องการตั้งค่า");
+      openPasswordModal();
     }
+  });
+
+  passwordForm.addEventListener("submit", event => {
+    event.preventDefault();
+    if(passwordInput.value === EDIT_PASSWORD){
+      enterEditMode();
+    }else{
+      passwordError.textContent = "รหัสไม่ถูกต้อง";
+      passwordInput.select();
+    }
+  });
+
+  passwordCancel.addEventListener("click", closePasswordModal);
+
+  passwordModal.addEventListener("click", event => {
+    if(event.target === passwordModal) closePasswordModal();
   });
 
   stopBtn.addEventListener("click", () => stopAll(true));
@@ -1010,7 +1099,6 @@
         state.favoriteBtn.classList.remove("active");
         state.soundPad.style.backgroundImage = "";
         state.soundPad.classList.remove("has-image", "playing");
-        state.number.hidden = false;
         state.imageName.textContent = "ยังไม่ได้เลือกรูป";
         state.audioName.textContent = "ยังไม่ได้เลือกเสียง";
         state.imageInput.value = "";
@@ -1044,78 +1132,6 @@
         setStatus("พร้อมใช้งาน");
       }
     }, 600));
-})();
-</script>
-<script id="secure-edit-script">
-(() => {
-  "use strict";
-
-  const PASSWORD = "1234";
-  const body = document.body;
-  const editButton = document.getElementById("editModeBtn");
-
-  if(!editButton || editButton.dataset.passwordProtected === "1") return;
-
-  editButton.dataset.passwordProtected = "1";
-  editButton.textContent = "แก้ไข";
-
-  document.querySelectorAll(".number").forEach(element => element.remove());
-  document.querySelectorAll(".pad-title").forEach(element => {
-    element.readOnly = true;
-    element.tabIndex = -1;
-  });
-
-  let passThrough = false;
-
-  function closeAllEditors(){
-    document.querySelectorAll(".pad-card.editor-open").forEach(card => {
-      card.classList.remove("editor-open");
-    });
-  }
-
-  function openEditMode(){
-    body.classList.add("secure-edit-mode");
-    passThrough = true;
-    editButton.click();
-    window.setTimeout(() => {
-      editButton.textContent = "ปิดการแก้ไข";
-    }, 0);
-  }
-
-  function closeEditMode(){
-    body.classList.remove("secure-edit-mode");
-    closeAllEditors();
-    passThrough = true;
-    editButton.click();
-    window.setTimeout(() => {
-      editButton.textContent = "แก้ไข";
-    }, 0);
-  }
-
-  editButton.addEventListener("click", event => {
-    if(passThrough){
-      passThrough = false;
-      return;
-    }
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    if(body.classList.contains("secure-edit-mode")){
-      closeEditMode();
-      return;
-    }
-
-    const entered = window.prompt("กรุณาใส่รหัสเพื่อแก้ไข");
-    if(entered === null) return;
-
-    if(entered !== PASSWORD){
-      window.alert("รหัสไม่ถูกต้อง");
-      return;
-    }
-
-    openEditMode();
-  }, true);
 })();
 </script>
 </body>

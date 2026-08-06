@@ -422,6 +422,42 @@
       .sound-pad{width:min(118px,100%)}
     }
   </style>
+<style id="secure-edit-style">
+  .number{display:none!important}
+  .pad-title{
+    text-decoration:none!important;
+    pointer-events:none!important;
+    resize:none!important;
+    overflow:hidden!important;
+  }
+  .icon-row,
+  #stopBtn,
+  #clearAllBtn,
+  .status,
+  .install-note{
+    display:none!important;
+  }
+  body:not(.secure-edit-mode) .header > div:first-child{
+    display:none!important;
+  }
+  body:not(.secure-edit-mode) .header{
+    justify-content:flex-end!important;
+    margin-bottom:14px!important;
+  }
+  body.secure-edit-mode .icon-row{
+    display:flex!important;
+  }
+  body.secure-edit-mode #stopBtn,
+  body.secure-edit-mode #clearAllBtn{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  body.secure-edit-mode .status,
+  body.secure-edit-mode .install-note{
+    display:block!important;
+  }
+</style>
 </head>
 
 <body>
@@ -1008,6 +1044,78 @@
         setStatus("พร้อมใช้งาน");
       }
     }, 600));
+})();
+</script>
+<script id="secure-edit-script">
+(() => {
+  "use strict";
+
+  const PASSWORD = "1234";
+  const body = document.body;
+  const editButton = document.getElementById("editModeBtn");
+
+  if(!editButton || editButton.dataset.passwordProtected === "1") return;
+
+  editButton.dataset.passwordProtected = "1";
+  editButton.textContent = "แก้ไข";
+
+  document.querySelectorAll(".number").forEach(element => element.remove());
+  document.querySelectorAll(".pad-title").forEach(element => {
+    element.readOnly = true;
+    element.tabIndex = -1;
+  });
+
+  let passThrough = false;
+
+  function closeAllEditors(){
+    document.querySelectorAll(".pad-card.editor-open").forEach(card => {
+      card.classList.remove("editor-open");
+    });
+  }
+
+  function openEditMode(){
+    body.classList.add("secure-edit-mode");
+    passThrough = true;
+    editButton.click();
+    window.setTimeout(() => {
+      editButton.textContent = "ปิดการแก้ไข";
+    }, 0);
+  }
+
+  function closeEditMode(){
+    body.classList.remove("secure-edit-mode");
+    closeAllEditors();
+    passThrough = true;
+    editButton.click();
+    window.setTimeout(() => {
+      editButton.textContent = "แก้ไข";
+    }, 0);
+  }
+
+  editButton.addEventListener("click", event => {
+    if(passThrough){
+      passThrough = false;
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if(body.classList.contains("secure-edit-mode")){
+      closeEditMode();
+      return;
+    }
+
+    const entered = window.prompt("กรุณาใส่รหัสเพื่อแก้ไข");
+    if(entered === null) return;
+
+    if(entered !== PASSWORD){
+      window.alert("รหัสไม่ถูกต้อง");
+      return;
+    }
+
+    openEditMode();
+  }, true);
 })();
 </script>
 </body>
