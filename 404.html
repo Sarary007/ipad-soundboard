@@ -458,6 +458,33 @@
     display:block!important;
   }
 </style>
+<style id="shared-public-style">
+  #exportSharedBtn{
+    display:none;
+    background:#0f766e;
+    border-color:#0f766e;
+    color:white;
+  }
+  body.secure-edit-mode #exportSharedBtn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .publish-help{
+    display:none;
+    width:100%;
+    margin:4px 0 10px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:#ecfeff;
+    color:#155e75;
+    font-size:.9rem;
+    line-height:1.5;
+  }
+  body.secure-edit-mode .publish-help{
+    display:block;
+  }
+</style>
 </head>
 
 <body>
@@ -479,12 +506,18 @@
 
       <div class="toolbar">
         <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
+        <button id="exportSharedBtn" class="toolbar-btn publish-btn" type="button">สร้างไฟล์เผยแพร่</button>
         <button id="stopBtn" class="toolbar-btn" type="button">หยุดเสียง</button>
         <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
       </div>
     </header>
 
     <div id="status" class="status">กำลังโหลดข้อมูล…</div>
+    <div class="publish-help">
+      หลังแก้รูปและเสียงเสร็จ กด “สร้างไฟล์เผยแพร่” แล้วนำไฟล์
+      <strong>shared-data.json</strong> ไปแทนไฟล์เดิมใน GitHub
+      เพื่อให้ทุกคนเห็นและได้ยินเหมือนกัน
+    </div>
     <section id="board" class="board" aria-label="ปุ่มเสียง"></section>
 
     <p class="install-note">
@@ -506,12 +539,14 @@
   const editModeBtn = document.getElementById("editModeBtn");
   const stopBtn = document.getElementById("stopBtn");
   const clearAllBtn = document.getElementById("clearAllBtn");
+  const exportSharedBtn = document.getElementById("exportSharedBtn");
   const unlock = document.getElementById("unlock");
   const unlockBtn = document.getElementById("unlockBtn");
 
   const states = new Map();
   let editMode = false;
   let audioContext = null;
+  let sharedRecords = {};
 
   function setStatus(message){
     statusEl.textContent = message;
@@ -592,6 +627,125 @@
       });
     } finally {
       db.close();
+    }
+  }
+
+function dataUrlToBlob(dataUrl){
+    if(!dataUrl || typeof dataUrl !== "string") return null;
+
+    const parts = dataUrl.split(",");
+    if(parts.length < 2) return null;
+
+    const header = parts[0];
+    const payload = parts.slice(1).join(",");
+    const mimeMatch = header.match(/^data:([^;]+);base64$/i);
+    if(!mimeMatch) return null;
+
+    try{
+      const binary = atob(payload);
+      const bytes = new Uint8Array(binary.length);
+      for(let i = 0; i < binary.length; i++){
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new Blob([bytes], {type: mimeMatch[1]});
+    }catch(error){
+      console.error("Invalid shared media data", error);
+      return null;
+    }
+  }
+
+  function blobToDataUrl(blob){
+    return new Promise((resolve, reject) => {
+      if(!blob){
+        resolve("");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("อ่านไฟล์ไม่สำเร็จ"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function fetchSharedRecords(){
+    try{
+      const response = await fetch(`./shared-data.json?v=${Date.now()}`, {
+        cache: "no-store"
+      });
+
+      if(!response.ok){
+        return {};
+      }
+
+      const payload = await response.json();
+      if(!payload || typeof payload !== "object" || !payload.pads){
+        return {};
+      }
+
+      return payload.pads;
+    }catch(error){
+      console.info("No shared data has been published yet.", error);
+      return {};
+    }
+  }
+
+  async function exportSharedData(){
+    if(!document.body.classList.contains("secure-edit-mode")){
+      alert("กรุณาเปิดโหมดแก้ไขก่อน");
+      return;
+    }
+
+    exportSharedBtn.disabled = true;
+    const previousText = exportSharedBtn.textContent;
+    exportSharedBtn.textContent = "กำลังสร้างไฟล์…";
+    setStatus("กำลังรวมรูปและเสียงสำหรับเผยแพร่");
+
+    try{
+      const pads = {};
+
+      for(const state of states.values()){
+        pads[state.id] = {
+          title: state.title,
+          favorite: state.favorite,
+          imageFilename: state.imageFilename || "",
+          audioFilename: state.audioFilename || "",
+          imageDataUrl: await blobToDataUrl(state.imageBlob),
+          audioDataUrl: await blobToDataUrl(state.audioBlob)
+        };
+      }
+
+      const payload = {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        pads
+      };
+
+      const output = new Blob(
+        [JSON.stringify(payload, null, 2)],
+        {type: "application/json;charset=utf-8"}
+      );
+      const url = URL.createObjectURL(output);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "shared-data.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+      setStatus("สร้าง shared-data.json แล้ว — นำไฟล์นี้ไปแทนใน GitHub");
+      alert(
+        "สร้างไฟล์ shared-data.json แล้ว\n\n" +
+        "ขั้นตอนถัดไป: อัปโหลดไฟล์นี้ไปแทน shared-data.json ใน GitHub"
+      );
+    }catch(error){
+      console.error(error);
+      setStatus("สร้างไฟล์เผยแพร่ไม่สำเร็จ");
+      alert("สร้างไฟล์ไม่สำเร็จ อาจมีไฟล์เสียงขนาดใหญ่เกินไป");
+    }finally{
+      exportSharedBtn.disabled = false;
+      exportSharedBtn.textContent = previousText;
     }
   }
 
@@ -941,13 +1095,22 @@
 
     async function load(){
       try{
-        const saved = await dbGet(id);
+        const localSaved = await dbGet(id);
+        const sharedSaved = sharedRecords[id] || null;
 
-        if(saved){
-          setTitle(saved.title || defaultTitle);
-          setFavorite(saved.favorite);
-          setImage(saved.imageBlob || null, saved.imageFilename || "");
-          setAudio(saved.audioBlob || null, saved.audioFilename || "");
+        if(localSaved){
+          setTitle(localSaved.title || defaultTitle);
+          setFavorite(localSaved.favorite);
+          setImage(localSaved.imageBlob || null, localSaved.imageFilename || "");
+          setAudio(localSaved.audioBlob || null, localSaved.audioFilename || "");
+        }else if(sharedSaved){
+          const sharedImage = dataUrlToBlob(sharedSaved.imageDataUrl || "");
+          const sharedAudio = dataUrlToBlob(sharedSaved.audioDataUrl || "");
+
+          setTitle(sharedSaved.title || defaultTitle);
+          setFavorite(sharedSaved.favorite);
+          setImage(sharedImage, sharedSaved.imageFilename || "");
+          setAudio(sharedAudio, sharedSaved.audioFilename || "");
         }else{
           setTitle(defaultTitle);
           setFavorite(false);
@@ -956,7 +1119,7 @@
         }
       }catch(error){
         console.error(error);
-        setStatus("Safari ไม่สามารถเปิดพื้นที่จัดเก็บได้ แต่ยังเลือกไฟล์และเล่นชั่วคราวได้");
+        setStatus("โหลดข้อมูลไม่สำเร็จ แต่ยังสามารถเลือกไฟล์และเล่นชั่วคราวได้");
       }
     }
 
@@ -964,9 +1127,21 @@
     load();
   }
 
-  for(let i = 0; i < PAD_COUNT; i++){
-    createPad(i);
+  async function initializePads(){
+    sharedRecords = await fetchSharedRecords();
+
+    for(let i = 0; i < PAD_COUNT; i++){
+      createPad(i);
+    }
+
+    window.setTimeout(() => {
+      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
+        setStatus(Object.keys(sharedRecords).length ? "โหลดข้อมูลที่เผยแพร่แล้ว" : "พร้อมใช้งาน");
+      }
+    }, 700);
   }
+
+  initializePads();
 
   editModeBtn.addEventListener("click", () => {
     editMode = !editMode;
@@ -982,6 +1157,7 @@
     }
   });
 
+  exportSharedBtn.addEventListener("click", exportSharedData);
   stopBtn.addEventListener("click", () => stopAll(true));
 
   clearAllBtn.addEventListener("click", async () => {
@@ -1038,12 +1214,7 @@
     });
   }
 
-  Promise.all(Array.from(states.values()).map(() => Promise.resolve()))
-    .then(() => setTimeout(() => {
-      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
-        setStatus("พร้อมใช้งาน");
-      }
-    }, 600));
+
 })();
 </script>
 <script id="secure-edit-script">
