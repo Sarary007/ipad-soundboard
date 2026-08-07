@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipad-soundboard-media-v1";
+const CACHE_NAME = "ipad-soundboard-media-v2";
 const APP_FILES = [
   "./",
   "./index.html",

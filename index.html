@@ -581,6 +581,22 @@
     </p>
   </main>
 
+<div id="exportModal" class="export-modal" aria-hidden="true">
+  <div class="export-card">
+    <h2>เตรียมไฟล์เผยแพร่แบบขนาดเล็ก</h2>
+    <p>
+      ดาวน์โหลดไฟล์รูปและเสียงแยกกัน แล้วอัปโหลดเข้าโฟลเดอร์
+      <strong>media</strong> ใน GitHub จากนั้นอัปโหลด
+      <strong>shared-config.json</strong> ไว้หน้าแรกของ Repository
+    </p>
+    <div class="export-actions">
+      <button id="buildExportBtn" class="toolbar-btn primary" type="button">สร้างรายการดาวน์โหลด</button>
+      <button id="closeExportBtn" class="toolbar-btn export-close" type="button">ปิด</button>
+    </div>
+    <div id="exportStatus"></div>
+    <div id="exportList" class="export-list"></div>
+  </div>
+
 <script>
 (() => {
   "use strict";
@@ -1462,21 +1478,6 @@ function extensionFromFile(filename, mime, category){
 })();
 </script>
 
-<div id="exportModal" class="export-modal" aria-hidden="true">
-  <div class="export-card">
-    <h2>เตรียมไฟล์เผยแพร่แบบขนาดเล็ก</h2>
-    <p>
-      ดาวน์โหลดไฟล์รูปและเสียงแยกกัน แล้วอัปโหลดเข้าโฟลเดอร์
-      <strong>media</strong> ใน GitHub จากนั้นอัปโหลด
-      <strong>shared-config.json</strong> ไว้หน้าแรกของ Repository
-    </p>
-    <div class="export-actions">
-      <button id="buildExportBtn" class="toolbar-btn primary" type="button">สร้างรายการดาวน์โหลด</button>
-      <button id="closeExportBtn" class="toolbar-btn export-close" type="button">ปิด</button>
-    </div>
-    <div id="exportStatus"></div>
-    <div id="exportList" class="export-list"></div>
-  </div>
 </div>
 
 </body>
