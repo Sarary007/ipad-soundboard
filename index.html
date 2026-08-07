@@ -431,7 +431,6 @@
     overflow:hidden!important;
   }
   .icon-row,
-  #stopBtn,
   #clearAllBtn,
   .status,
   .install-note{
@@ -546,6 +545,17 @@
   }
 </style>
 
+<style id="always-stop-style">
+  #stopBtn{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    background:#dc2626!important;
+    border-color:#dc2626!important;
+    color:#fff!important;
+    font-weight:800!important;
+  }
+</style>
 </head>
 
 <body>
@@ -568,7 +578,7 @@
       <div class="toolbar">
         <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
         <button id="mediaExportBtn" class="toolbar-btn media-export-btn" type="button">เตรียมไฟล์เผยแพร่</button>
-        <button id="stopBtn" class="toolbar-btn" type="button">หยุดเสียง</button>
+        <button id="stopBtn" class="toolbar-btn" type="button">⏹ หยุดเสียง</button>
         <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
       </div>
     </header>
