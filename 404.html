@@ -458,33 +458,94 @@
     display:block!important;
   }
 </style>
-<style id="shared-public-style">
-  #exportSharedBtn{
+
+<style id="media-folder-style">
+  .media-export-btn{
     display:none;
     background:#0f766e;
+    color:#fff;
     border-color:#0f766e;
-    color:white;
   }
-  body.secure-edit-mode #exportSharedBtn{
+  body.secure-edit-mode .media-export-btn{
     display:inline-flex;
     align-items:center;
     justify-content:center;
   }
-  .publish-help{
+  .export-modal{
+    position:fixed;
+    inset:0;
+    z-index:1200;
     display:none;
-    width:100%;
-    margin:4px 0 10px;
-    padding:10px 12px;
-    border-radius:12px;
-    background:#ecfeff;
-    color:#155e75;
-    font-size:.9rem;
-    line-height:1.5;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(15,23,42,.78);
+    backdrop-filter:blur(8px);
   }
-  body.secure-edit-mode .publish-help{
-    display:block;
+  .export-modal.open{display:flex}
+  .export-card{
+    width:min(720px,100%);
+    max-height:88vh;
+    overflow:auto;
+    background:#fff;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 25px 70px rgba(0,0,0,.35);
+  }
+  .export-card h2{margin:0 0 8px}
+  .export-card p{
+    color:#64748b;
+    line-height:1.55;
+  }
+  .export-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:14px 0;
+  }
+  .export-list{
+    display:grid;
+    gap:10px;
+    margin-top:14px;
+  }
+  .export-row{
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:12px;
+  }
+  .export-row strong{display:block;margin-bottom:8px}
+  .export-links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .download-link{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:40px;
+    padding:8px 12px;
+    border-radius:10px;
+    background:#e0f2fe;
+    color:#075985;
+    text-decoration:none;
+    font-weight:750;
+  }
+  .download-link.audio{
+    background:#ecfdf5;
+    color:#166534;
+  }
+  .export-close{
+    background:#e2e8f0!important;
+    color:#0f172a!important;
+  }
+  .size-warning{
+    color:#b45309;
+    font-size:.84rem;
+    margin-top:6px;
   }
 </style>
+
 </head>
 
 <body>
@@ -506,18 +567,13 @@
 
       <div class="toolbar">
         <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
-        <button id="exportSharedBtn" class="toolbar-btn publish-btn" type="button">สร้างไฟล์เผยแพร่</button>
+        <button id="mediaExportBtn" class="toolbar-btn media-export-btn" type="button">เตรียมไฟล์เผยแพร่</button>
         <button id="stopBtn" class="toolbar-btn" type="button">หยุดเสียง</button>
         <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
       </div>
     </header>
 
     <div id="status" class="status">กำลังโหลดข้อมูล…</div>
-    <div class="publish-help">
-      หลังแก้รูปและเสียงเสร็จ กด “สร้างไฟล์เผยแพร่” แล้วนำไฟล์
-      <strong>shared-data.json</strong> ไปแทนไฟล์เดิมใน GitHub
-      เพื่อให้ทุกคนเห็นและได้ยินเหมือนกัน
-    </div>
     <section id="board" class="board" aria-label="ปุ่มเสียง"></section>
 
     <p class="install-note">
@@ -539,14 +595,19 @@
   const editModeBtn = document.getElementById("editModeBtn");
   const stopBtn = document.getElementById("stopBtn");
   const clearAllBtn = document.getElementById("clearAllBtn");
-  const exportSharedBtn = document.getElementById("exportSharedBtn");
+  const mediaExportBtn = document.getElementById("mediaExportBtn");
+  const exportModal = document.getElementById("exportModal");
+  const buildExportBtn = document.getElementById("buildExportBtn");
+  const closeExportBtn = document.getElementById("closeExportBtn");
+  const exportList = document.getElementById("exportList");
+  const exportStatus = document.getElementById("exportStatus");
   const unlock = document.getElementById("unlock");
   const unlockBtn = document.getElementById("unlockBtn");
 
   const states = new Map();
   let editMode = false;
   let audioContext = null;
-  let sharedRecords = {};
+  let sharedConfig = {};
 
   function setStatus(message){
     statusEl.textContent = message;
@@ -630,122 +691,203 @@
     }
   }
 
-function dataUrlToBlob(dataUrl){
-    if(!dataUrl || typeof dataUrl !== "string") return null;
+function extensionFromFile(filename, mime, category){
+    const match = String(filename || "").toLowerCase().match(/\.([a-z0-9]{2,5})$/);
+    if(match) return match[1];
 
-    const parts = dataUrl.split(",");
-    if(parts.length < 2) return null;
+    const map = {
+      "image/jpeg":"jpg",
+      "image/png":"png",
+      "image/webp":"webp",
+      "audio/mpeg":"mp3",
+      "audio/mp4":"m4a",
+      "audio/x-m4a":"m4a",
+      "audio/wav":"wav",
+      "audio/x-wav":"wav",
+      "audio/aac":"aac",
+      "audio/ogg":"ogg"
+    };
 
-    const header = parts[0];
-    const payload = parts.slice(1).join(",");
-    const mimeMatch = header.match(/^data:([^;]+);base64$/i);
-    if(!mimeMatch) return null;
-
-    try{
-      const binary = atob(payload);
-      const bytes = new Uint8Array(binary.length);
-      for(let i = 0; i < binary.length; i++){
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return new Blob([bytes], {type: mimeMatch[1]});
-    }catch(error){
-      console.error("Invalid shared media data", error);
-      return null;
-    }
+    return map[mime] || (category === "image" ? "jpg" : "mp3");
   }
 
-  function blobToDataUrl(blob){
-    return new Promise((resolve, reject) => {
-      if(!blob){
-        resolve("");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(reader.error || new Error("อ่านไฟล์ไม่สำเร็จ"));
-      reader.readAsDataURL(blob);
-    });
+  async function fetchBlob(path){
+    if(!path) return null;
+    const response = await fetch(path, {cache:"no-store"});
+    if(!response.ok) throw new Error(`โหลด ${path} ไม่สำเร็จ`);
+    return await response.blob();
   }
 
-  async function fetchSharedRecords(){
+  async function loadSharedConfig(){
     try{
-      const response = await fetch(`./shared-data.json?v=${Date.now()}`, {
-        cache: "no-store"
+      const response = await fetch(`./shared-config.json?v=${Date.now()}`, {
+        cache:"no-store"
       });
-
-      if(!response.ok){
-        return {};
-      }
-
-      const payload = await response.json();
-      if(!payload || typeof payload !== "object" || !payload.pads){
-        return {};
-      }
-
-      return payload.pads;
+      if(!response.ok) return {};
+      const data = await response.json();
+      return data && data.pads ? data.pads : {};
     }catch(error){
-      console.info("No shared data has been published yet.", error);
+      console.info("ยังไม่มี shared-config.json", error);
       return {};
     }
   }
 
-  async function exportSharedData(){
-    if(!document.body.classList.contains("secure-edit-mode")){
-      alert("กรุณาเปิดโหมดแก้ไขก่อน");
-      return;
-    }
+  function blobDownloadLink(blob, filename, label, cssClass=""){
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.className = `download-link ${cssClass}`;
+    link.textContent = label;
+    link.addEventListener("click", () => {
+      window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }, {once:true});
+    return link;
+  }
 
-    exportSharedBtn.disabled = true;
-    const previousText = exportSharedBtn.textContent;
-    exportSharedBtn.textContent = "กำลังสร้างไฟล์…";
-    setStatus("กำลังรวมรูปและเสียงสำหรับเผยแพร่");
+  async function compressImage(blob){
+    if(!blob || !blob.type.startsWith("image/")) return blob;
 
-    try{
-      const pads = {};
+    return await new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const image = new Image();
 
-      for(const state of states.values()){
-        pads[state.id] = {
-          title: state.title,
-          favorite: state.favorite,
-          imageFilename: state.imageFilename || "",
-          audioFilename: state.audioFilename || "",
-          imageDataUrl: await blobToDataUrl(state.imageBlob),
-          audioDataUrl: await blobToDataUrl(state.audioBlob)
-        };
-      }
+      image.onload = () => {
+        try{
+          const maxSide = 900;
+          const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+          const width = Math.max(1, Math.round(image.width * scale));
+          const height = Math.max(1, Math.round(image.height * scale));
 
-      const payload = {
-        version: 1,
-        generatedAt: new Date().toISOString(),
-        pads
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+          context.drawImage(image, 0, 0, width, height);
+
+          canvas.toBlob((result) => {
+            URL.revokeObjectURL(url);
+            resolve(result || blob);
+          }, "image/jpeg", 0.78);
+        }catch(error){
+          console.error(error);
+          URL.revokeObjectURL(url);
+          resolve(blob);
+        }
       };
 
-      const output = new Blob(
-        [JSON.stringify(payload, null, 2)],
-        {type: "application/json;charset=utf-8"}
-      );
-      const url = URL.createObjectURL(output);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "shared-data.json";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      };
 
-      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
-      setStatus("สร้าง shared-data.json แล้ว — นำไฟล์นี้ไปแทนใน GitHub");
-      alert(
-        "สร้างไฟล์ shared-data.json แล้ว\n\n" +
-        "ขั้นตอนถัดไป: อัปโหลดไฟล์นี้ไปแทน shared-data.json ใน GitHub"
+      image.src = url;
+    });
+  }
+
+  async function createExportFiles(){
+    buildExportBtn.disabled = true;
+    exportList.innerHTML = "";
+    exportStatus.textContent = "กำลังเตรียมไฟล์…";
+
+    try{
+      const config = {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        pads: {}
+      };
+
+      let mediaCount = 0;
+
+      for(const state of states.values()){
+        const record = {
+          title: state.title,
+          favorite: state.favorite
+        };
+
+        const row = document.createElement("div");
+        row.className = "export-row";
+
+        const title = document.createElement("strong");
+        title.textContent = state.title;
+        row.appendChild(title);
+
+        const links = document.createElement("div");
+        links.className = "export-links";
+
+        if(state.imageBlob){
+          const compressed = await compressImage(state.imageBlob);
+          const imageFilename = `${state.id}.jpg`;
+          record.image = `media/${imageFilename}`;
+          links.appendChild(
+            blobDownloadLink(compressed, imageFilename, "ดาวน์โหลดรูป")
+          );
+          mediaCount++;
+        }
+
+        if(state.audioBlob){
+          const ext = extensionFromFile(
+            state.audioFilename,
+            state.audioBlob.type,
+            "audio"
+          );
+          const audioFilename = `${state.id}.${ext}`;
+          record.audio = `media/${audioFilename}`;
+          links.appendChild(
+            blobDownloadLink(
+              state.audioBlob,
+              audioFilename,
+              "ดาวน์โหลดเสียง",
+              "audio"
+            )
+          );
+          mediaCount++;
+
+          if(state.audioBlob.size > 10 * 1024 * 1024){
+            const warning = document.createElement("div");
+            warning.className = "size-warning";
+            warning.textContent = "ไฟล์เสียงนี้ใหญ่กว่า 10 MB ควรลดขนาดก่อนอัปโหลด";
+            row.appendChild(warning);
+          }
+        }
+
+        config.pads[state.id] = record;
+
+        if(links.children.length){
+          row.appendChild(links);
+          exportList.appendChild(row);
+        }
+      }
+
+      const configBlob = new Blob(
+        [JSON.stringify(config, null, 2)],
+        {type:"application/json;charset=utf-8"}
       );
+
+      const configRow = document.createElement("div");
+      configRow.className = "export-row";
+      const configTitle = document.createElement("strong");
+      configTitle.textContent = "ไฟล์ตั้งค่า";
+      configRow.appendChild(configTitle);
+      const configLinks = document.createElement("div");
+      configLinks.className = "export-links";
+      configLinks.appendChild(
+        blobDownloadLink(
+          configBlob,
+          "shared-config.json",
+          "ดาวน์โหลด shared-config.json"
+        )
+      );
+      configRow.appendChild(configLinks);
+      exportList.prepend(configRow);
+
+      exportStatus.textContent =
+        `เตรียมแล้ว ${mediaCount} ไฟล์ — แตะดาวน์โหลดทีละไฟล์`;
     }catch(error){
       console.error(error);
-      setStatus("สร้างไฟล์เผยแพร่ไม่สำเร็จ");
-      alert("สร้างไฟล์ไม่สำเร็จ อาจมีไฟล์เสียงขนาดใหญ่เกินไป");
+      exportStatus.textContent = "เตรียมไฟล์ไม่สำเร็จ";
     }finally{
-      exportSharedBtn.disabled = false;
-      exportSharedBtn.textContent = previousText;
+      buildExportBtn.disabled = false;
     }
   }
 
@@ -1095,22 +1237,32 @@ function dataUrlToBlob(dataUrl){
 
     async function load(){
       try{
-        const localSaved = await dbGet(id);
-        const sharedSaved = sharedRecords[id] || null;
+        const saved = await dbGet(id);
+        const publicSaved = sharedConfig[id] || null;
 
-        if(localSaved){
-          setTitle(localSaved.title || defaultTitle);
-          setFavorite(localSaved.favorite);
-          setImage(localSaved.imageBlob || null, localSaved.imageFilename || "");
-          setAudio(localSaved.audioBlob || null, localSaved.audioFilename || "");
-        }else if(sharedSaved){
-          const sharedImage = dataUrlToBlob(sharedSaved.imageDataUrl || "");
-          const sharedAudio = dataUrlToBlob(sharedSaved.audioDataUrl || "");
+        if(saved){
+          setTitle(saved.title || defaultTitle);
+          setFavorite(saved.favorite);
+          setImage(saved.imageBlob || null, saved.imageFilename || "");
+          setAudio(saved.audioBlob || null, saved.audioFilename || "");
+        }else if(publicSaved){
+          const imageBlob = publicSaved.image
+            ? await fetchBlob(publicSaved.image)
+            : null;
+          const audioBlob = publicSaved.audio
+            ? await fetchBlob(publicSaved.audio)
+            : null;
 
-          setTitle(sharedSaved.title || defaultTitle);
-          setFavorite(sharedSaved.favorite);
-          setImage(sharedImage, sharedSaved.imageFilename || "");
-          setAudio(sharedAudio, sharedSaved.audioFilename || "");
+          setTitle(publicSaved.title || defaultTitle);
+          setFavorite(publicSaved.favorite);
+          setImage(
+            imageBlob,
+            publicSaved.image ? publicSaved.image.split("/").pop() : ""
+          );
+          setAudio(
+            audioBlob,
+            publicSaved.audio ? publicSaved.audio.split("/").pop() : ""
+          );
         }else{
           setTitle(defaultTitle);
           setFavorite(false);
@@ -1119,7 +1271,10 @@ function dataUrlToBlob(dataUrl){
         }
       }catch(error){
         console.error(error);
-        setStatus("โหลดข้อมูลไม่สำเร็จ แต่ยังสามารถเลือกไฟล์และเล่นชั่วคราวได้");
+        setTitle(defaultTitle);
+        setFavorite(false);
+        setImage(null, "");
+        setAudio(null, "");
       }
     }
 
@@ -1127,21 +1282,15 @@ function dataUrlToBlob(dataUrl){
     load();
   }
 
-  async function initializePads(){
-    sharedRecords = await fetchSharedRecords();
+  async function initialize(){
+    sharedConfig = await loadSharedConfig();
 
     for(let i = 0; i < PAD_COUNT; i++){
       createPad(i);
     }
-
-    window.setTimeout(() => {
-      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
-        setStatus(Object.keys(sharedRecords).length ? "โหลดข้อมูลที่เผยแพร่แล้ว" : "พร้อมใช้งาน");
-      }
-    }, 700);
   }
 
-  initializePads();
+  initialize();
 
   editModeBtn.addEventListener("click", () => {
     editMode = !editMode;
@@ -1157,7 +1306,25 @@ function dataUrlToBlob(dataUrl){
     }
   });
 
-  exportSharedBtn.addEventListener("click", exportSharedData);
+  mediaExportBtn.addEventListener("click", () => {
+    exportModal.classList.add("open");
+    exportModal.setAttribute("aria-hidden", "false");
+  });
+
+  closeExportBtn.addEventListener("click", () => {
+    exportModal.classList.remove("open");
+    exportModal.setAttribute("aria-hidden", "true");
+  });
+
+  buildExportBtn.addEventListener("click", createExportFiles);
+
+  exportModal.addEventListener("click", event => {
+    if(event.target === exportModal){
+      exportModal.classList.remove("open");
+      exportModal.setAttribute("aria-hidden", "true");
+    }
+  });
+
   stopBtn.addEventListener("click", () => stopAll(true));
 
   clearAllBtn.addEventListener("click", async () => {
@@ -1214,7 +1381,12 @@ function dataUrlToBlob(dataUrl){
     });
   }
 
-
+  Promise.all(Array.from(states.values()).map(() => Promise.resolve()))
+    .then(() => setTimeout(() => {
+      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
+        setStatus("พร้อมใช้งาน");
+      }
+    }, 600));
 })();
 </script>
 <script id="secure-edit-script">
@@ -1289,5 +1461,23 @@ function dataUrlToBlob(dataUrl){
   }, true);
 })();
 </script>
+
+<div id="exportModal" class="export-modal" aria-hidden="true">
+  <div class="export-card">
+    <h2>เตรียมไฟล์เผยแพร่แบบขนาดเล็ก</h2>
+    <p>
+      ดาวน์โหลดไฟล์รูปและเสียงแยกกัน แล้วอัปโหลดเข้าโฟลเดอร์
+      <strong>media</strong> ใน GitHub จากนั้นอัปโหลด
+      <strong>shared-config.json</strong> ไว้หน้าแรกของ Repository
+    </p>
+    <div class="export-actions">
+      <button id="buildExportBtn" class="toolbar-btn primary" type="button">สร้างรายการดาวน์โหลด</button>
+      <button id="closeExportBtn" class="toolbar-btn export-close" type="button">ปิด</button>
+    </div>
+    <div id="exportStatus"></div>
+    <div id="exportList" class="export-list"></div>
+  </div>
+</div>
+
 </body>
 </html>
