@@ -1,33 +1,33 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T04:26:23.584Z",
+  "generatedAt": "2026-08-07T04:29:22.024Z",
   "pads": {
     "pad-1": {
-      "title": "ช้างนินทา",
+      "title": "Gossiping",
       "favorite": false,
       "image": "media/pad-1.jpg",
       "audio": "media/pad-1.mp3"
     },
     "pad-2": {
-      "title": "ช้างนอน",
+      "title": "Sleeping",
       "favorite": false,
       "image": "media/pad-2.jpg",
       "audio": "media/pad-2.mp3"
     },
     "pad-3": {
-      "title": "ช้างเรียกหากัน",
+      "title": "Calling each \nother",
       "favorite": false,
       "image": "media/pad-3.jpg",
       "audio": "media/pad-3.mp3"
     },
     "pad-4": {
-      "title": "ช้างร้องเพลง",
+      "title": "Singing",
       "favorite": false,
       "image": "media/pad-4.jpg",
       "audio": "media/pad-4.mp3"
     },
     "pad-5": {
-      "title": "ปุ่มเสียง 5",
+      "title": "Shouting",
       "favorite": false,
       "image": "media/pad-5.jpg",
       "audio": "media/pad-5.mp3"
@@ -41,9 +41,8 @@
       "favorite": false
     },
     "pad-8": {
-      "title": "ปุ่มเสียง 8",
-      "favorite": false,
-      "audio": "media/pad-8.mp3"
+      "title": "Sound Button 8",
+      "favorite": false
     },
     "pad-9": {
       "title": "ปุ่มเสียง 9",
