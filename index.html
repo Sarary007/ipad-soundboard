@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -562,46 +562,42 @@
   <div id="unlock" class="unlock">
     <div class="unlock-card">
       <div class="unlock-icon">🔊</div>
-      <h2>เปิดระบบเสียงบน iPad</h2>
-      <p>แตะปุ่มนี้หนึ่งครั้งก่อนใช้งาน เพื่อให้ Safari อนุญาตให้แอปเล่นเสียง</p>
-      <button id="unlockBtn" class="unlock-btn" type="button">แตะเพื่อเริ่มใช้งาน</button>
+      <h2>Enable Audio on iPad</h2>
+      <p>Tap this button once so Safari can allow audio playback.</p>
+      <button id="unlockBtn" class="unlock-btn" type="button">Tap to Start</button>
     </div>
   </div>
 
   <main class="app">
     <header class="header">
       <div>
-        <h1>Soundboard รูปภาพ</h1>
-        <p class="subtitle">แตะรูปเพื่อเล่นเสียง แต่ละปุ่มเปลี่ยนชื่อ เลือกรูป และเลือกเสียงของตัวเองได้</p>
+        <h1>Image Soundboard</h1>
+        <p class="subtitle">Tap an image to play its sound. Each button can have its own name, image, and audio file.</p>
       </div>
 
       <div class="toolbar">
-        <button id="editModeBtn" class="toolbar-btn primary" type="button">เปิดโหมดแก้ไข</button>
-        <button id="mediaExportBtn" class="toolbar-btn media-export-btn" type="button">เตรียมไฟล์เผยแพร่</button>
-        <button id="stopBtn" class="toolbar-btn" type="button">⏹ หยุดเสียง</button>
-        <button id="clearAllBtn" class="toolbar-btn danger" type="button">ล้างทั้งหมด</button>
+        <button id="editModeBtn" class="toolbar-btn primary" type="button">Edit</button>
+        <button id="mediaExportBtn" class="toolbar-btn media-export-btn" type="button">Prepare Publish Files</button>
+        <button id="stopBtn" class="toolbar-btn" type="button">⏹ Stop Sound</button>
+        <button id="clearAllBtn" class="toolbar-btn danger" type="button">Clear All</button>
       </div>
     </header>
 
-    <div id="status" class="status">กำลังโหลดข้อมูล…</div>
-    <section id="board" class="board" aria-label="ปุ่มเสียง"></section>
+    <div id="status" class="status">Loading data…</div>
+    <section id="board" class="board" aria-label="Sound buttons"></section>
 
     <p class="install-note">
-      เปิดผ่าน Safari แล้วเลือก แชร์ → เพิ่มไปยังหน้าจอโฮม → เปิดเป็นเว็บแอป
+      Open in Safari, then choose Share → Add to Home Screen → Open as Web App.
     </p>
   </main>
 
 <div id="exportModal" class="export-modal" aria-hidden="true">
   <div class="export-card">
-    <h2>เตรียมไฟล์เผยแพร่แบบขนาดเล็ก</h2>
-    <p>
-      ดาวน์โหลดไฟล์รูปและเสียงแยกกัน แล้วอัปโหลดเข้าโฟลเดอร์
-      <strong>media</strong> ใน GitHub จากนั้นอัปโหลด
-      <strong>shared-config.json</strong> ไว้หน้าแรกของ Repository
-    </p>
+    <h2>Prepare Smaller Publish Files</h2>
+    <p>Download image and audio files separately, upload them to the <strong>media</strong> folder in GitHub, then upload <strong>shared-config.json</strong> to the repository root.</p>
     <div class="export-actions">
-      <button id="buildExportBtn" class="toolbar-btn primary" type="button">สร้างรายการดาวน์โหลด</button>
-      <button id="closeExportBtn" class="toolbar-btn export-close" type="button">ปิด</button>
+      <button id="buildExportBtn" class="toolbar-btn primary" type="button">Create Download List</button>
+      <button id="closeExportBtn" class="toolbar-btn export-close" type="button">Close</button>
     </div>
     <div id="exportStatus"></div>
     <div id="exportList" class="export-list"></div>
@@ -740,7 +736,7 @@ function extensionFromFile(filename, mime, category){
   async function fetchBlob(path){
     if(!path) return null;
     const response = await fetch(path, {cache:"no-store"});
-    if(!response.ok) throw new Error(`โหลด ${path} ไม่สำเร็จ`);
+    if(!response.ok) throw new Error(`Could not load ${path}`);
     return await response.blob();
   }
 
@@ -753,7 +749,7 @@ function extensionFromFile(filename, mime, category){
       const data = await response.json();
       return data && data.pads ? data.pads : {};
     }catch(error){
-      console.info("ยังไม่มี shared-config.json", error);
+      console.info("No shared-config.json has been published yet", error);
       return {};
     }
   }
@@ -814,7 +810,7 @@ function extensionFromFile(filename, mime, category){
   async function createExportFiles(){
     buildExportBtn.disabled = true;
     exportList.innerHTML = "";
-    exportStatus.textContent = "กำลังเตรียมไฟล์…";
+    exportStatus.textContent = "Preparing files…";
 
     try{
       const config = {
@@ -846,7 +842,7 @@ function extensionFromFile(filename, mime, category){
           const imageFilename = `${state.id}.jpg`;
           record.image = `media/${imageFilename}`;
           links.appendChild(
-            blobDownloadLink(compressed, imageFilename, "ดาวน์โหลดรูป")
+            blobDownloadLink(compressed, imageFilename, "Download Image")
           );
           mediaCount++;
         }
@@ -863,7 +859,7 @@ function extensionFromFile(filename, mime, category){
             blobDownloadLink(
               state.audioBlob,
               audioFilename,
-              "ดาวน์โหลดเสียง",
+              "Download Audio",
               "audio"
             )
           );
@@ -872,7 +868,7 @@ function extensionFromFile(filename, mime, category){
           if(state.audioBlob.size > 10 * 1024 * 1024){
             const warning = document.createElement("div");
             warning.className = "size-warning";
-            warning.textContent = "ไฟล์เสียงนี้ใหญ่กว่า 10 MB ควรลดขนาดก่อนอัปโหลด";
+            warning.textContent = "This audio file is larger than 10 MB. Consider reducing its size before uploading.";
             row.appendChild(warning);
           }
         }
@@ -893,7 +889,7 @@ function extensionFromFile(filename, mime, category){
       const configRow = document.createElement("div");
       configRow.className = "export-row";
       const configTitle = document.createElement("strong");
-      configTitle.textContent = "ไฟล์ตั้งค่า";
+      configTitle.textContent = "Configuration File";
       configRow.appendChild(configTitle);
       const configLinks = document.createElement("div");
       configLinks.className = "export-links";
@@ -901,17 +897,17 @@ function extensionFromFile(filename, mime, category){
         blobDownloadLink(
           configBlob,
           "shared-config.json",
-          "ดาวน์โหลด shared-config.json"
+          "Download shared-config.json"
         )
       );
       configRow.appendChild(configLinks);
       exportList.prepend(configRow);
 
       exportStatus.textContent =
-        `เตรียมแล้ว ${mediaCount} ไฟล์ — แตะดาวน์โหลดทีละไฟล์`;
+        `Prepared ${mediaCount} files — download them one by one`;
     }catch(error){
       console.error(error);
-      exportStatus.textContent = "เตรียมไฟล์ไม่สำเร็จ";
+      exportStatus.textContent = "Unable to prepare files";
     }finally{
       buildExportBtn.disabled = false;
     }
@@ -935,11 +931,11 @@ function extensionFromFile(filename, mime, category){
 
       unlock.classList.add("hidden");
       sessionStorage.setItem("soundboard-audio-unlocked", "1");
-      setStatus("พร้อมใช้งาน");
+      setStatus("Ready");
     } catch(error){
       console.error(error);
       unlock.classList.add("hidden");
-      setStatus("พร้อมใช้งาน — หากไม่มีเสียง ให้แตะปุ่มอีกครั้ง");
+      setStatus("Ready — if you do not hear audio, tap the button again");
     }
   }
 
@@ -963,51 +959,51 @@ function extensionFromFile(filename, mime, category){
       try{ state.audio.currentTime = 0; }catch(_){}
       state.soundPad.classList.remove("playing");
     }
-    if(updateStatus) setStatus("หยุดเสียงแล้ว");
+    if(updateStatus) setStatus("Sound stopped");
   }
 
   function createPad(index){
     const id = `pad-${index + 1}`;
-    const defaultTitle = `ปุ่มเสียง ${index + 1}`;
+    const defaultTitle = `Sound Button ${index + 1}`;
 
     const card = document.createElement("article");
     card.className = "pad-card";
     card.innerHTML = `
-      <button class="sound-pad" type="button" aria-label="เล่น ${defaultTitle}">
+      <button class="sound-pad" type="button" aria-label="Play ${defaultTitle}">
         <span class="number">${index + 1}</span>
       </button>
 
       <textarea class="pad-title" rows="2" maxlength="50" spellcheck="false">${defaultTitle}</textarea>
 
       <div class="icon-row">
-        <button class="round-btn favorite-btn" type="button" title="รายการโปรด">${iconHeart()}</button>
-        <button class="round-btn settings-btn" type="button" title="ตั้งค่า">${iconSettings()}</button>
-        <button class="round-btn play-btn" type="button" title="เล่น">${iconPlay()}</button>
+        <button class="round-btn favorite-btn" type="button" title="Favorite">${iconHeart()}</button>
+        <button class="round-btn settings-btn" type="button" title="Settings">${iconSettings()}</button>
+        <button class="round-btn play-btn" type="button" title="Play">${iconPlay()}</button>
       </div>
 
       <section class="editor">
         <div class="field">
-          <label>ชื่อปุ่ม</label>
+          <label>Button Name</label>
           <textarea class="text-input title-editor" rows="2" maxlength="50">${defaultTitle}</textarea>
         </div>
 
         <div class="field">
-          <label for="image-${id}">รูปภาพปุ่ม</label>
-          <label class="file-label" for="image-${id}">เลือกรูปจาก Photos หรือ Files</label>
+          <label for="image-${id}">Button Image</label>
+          <label class="file-label" for="image-${id}">Choose an image from Photos or Files</label>
           <input id="image-${id}" class="image-input" type="file" accept="image/*">
-          <div class="filename image-name">ยังไม่ได้เลือกรูป</div>
+          <div class="filename image-name">No image selected</div>
         </div>
 
         <div class="field">
-          <label for="audio-${id}">ไฟล์เสียง</label>
-          <label class="file-label" for="audio-${id}">เลือกเสียงจาก Files</label>
+          <label for="audio-${id}">Audio File</label>
+          <label class="file-label" for="audio-${id}">Choose audio from Files</label>
           <input id="audio-${id}" class="audio-input" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg">
-          <div class="filename audio-name">ยังไม่ได้เลือกเสียง</div>
+          <div class="filename audio-name">No audio selected</div>
         </div>
 
         <div class="editor-actions">
-          <button class="small-btn test-btn" type="button">ทดสอบ</button>
-          <button class="small-btn danger clear-btn" type="button">ล้างปุ่มนี้</button>
+          <button class="small-btn test-btn" type="button">Test</button>
+          <button class="small-btn danger clear-btn" type="button">Clear This Button</button>
         </div>
       </section>
     `;
@@ -1051,7 +1047,7 @@ function extensionFromFile(filename, mime, category){
       state.title = clean;
       padTitle.value = clean;
       titleEditor.value = clean;
-      soundPad.setAttribute("aria-label", `เล่น ${clean}`);
+      soundPad.setAttribute("aria-label", `Play ${clean}`);
     }
 
     function setFavorite(value){
@@ -1073,12 +1069,12 @@ function extensionFromFile(filename, mime, category){
         soundPad.style.backgroundImage = `url("${state.imageUrl}")`;
         soundPad.classList.add("has-image");
         number.hidden = true;
-        imageName.textContent = filename || "เลือกรูปแล้ว";
+        imageName.textContent = filename || "Image selected";
       }else{
         soundPad.style.backgroundImage = "";
         soundPad.classList.remove("has-image");
         number.hidden = false;
-        imageName.textContent = "ยังไม่ได้เลือกรูป";
+        imageName.textContent = "No image selected";
       }
     }
 
@@ -1098,11 +1094,11 @@ function extensionFromFile(filename, mime, category){
         state.audioUrl = URL.createObjectURL(blob);
         audio.src = state.audioUrl;
         audio.load();
-        audioName.textContent = filename || "เลือกเสียงแล้ว";
+        audioName.textContent = filename || "Audio selected";
       }else{
         audio.removeAttribute("src");
         audio.load();
-        audioName.textContent = "ยังไม่ได้เลือกเสียง";
+        audioName.textContent = "No audio selected";
       }
 
       soundPad.classList.remove("playing");
@@ -1122,7 +1118,7 @@ function extensionFromFile(filename, mime, category){
 
     async function playSound(){
       if(!state.audioBlob || !audio.src){
-        setStatus(`"${state.title}" ยังไม่ได้เลือกไฟล์เสียง`);
+        setStatus(`"${state.title}" has no audio file selected.`);
         if(editMode) card.classList.add("editor-open");
         return;
       }
@@ -1138,10 +1134,10 @@ function extensionFromFile(filename, mime, category){
         if(promise) await promise;
 
         soundPad.classList.add("playing");
-        setStatus(`กำลังเล่น: ${state.title}`);
+        setStatus(`Playing: ${state.title}`);
       }catch(error){
         console.error(error);
-        setStatus("iPad ไม่อนุญาตให้เล่นเสียง กรุณาแตะ “เปิดระบบเสียง” แล้วลองใหม่");
+        setStatus("iPad did not allow audio playback. Tap “Enable Audio” and try again.");
         unlock.classList.remove("hidden");
       }
     }
@@ -1152,7 +1148,7 @@ function extensionFromFile(filename, mime, category){
 
     audio.addEventListener("ended", () => {
       soundPad.classList.remove("playing");
-      setStatus("พร้อมใช้งาน");
+      setStatus("Ready");
     });
 
     audio.addEventListener("pause", () => {
@@ -1167,17 +1163,17 @@ function extensionFromFile(filename, mime, category){
         await persist();
       }catch(error){
         console.error(error);
-        setStatus("บันทึกรายการโปรดไม่สำเร็จ");
+        setStatus("Could not save favorite setting.");
       }
     });
 
     settingsBtn.addEventListener("click", () => {
       if(!editMode){
         editMode = true;
-        editModeBtn.textContent = "ปิดโหมดแก้ไข";
+        editModeBtn.textContent = "Close Edit Mode";
       }
       card.classList.toggle("editor-open");
-      setStatus(card.classList.contains("editor-open") ? `กำลังตั้งค่า: ${state.title}` : "พร้อมใช้งาน");
+      setStatus(card.classList.contains("editor-open") ? `Editing: ${state.title}` : "Ready");
     });
 
     padTitle.addEventListener("input", async () => {
@@ -1203,7 +1199,7 @@ function extensionFromFile(filename, mime, category){
       if(!file) return;
 
       if(!file.type.startsWith("image/")){
-        alert("กรุณาเลือกรูปภาพ");
+        alert("Please select an image file.");
         imageInput.value = "";
         return;
       }
@@ -1212,10 +1208,10 @@ function extensionFromFile(filename, mime, category){
 
       try{
         await persist();
-        setStatus(`บันทึกรูปของ "${state.title}" แล้ว`);
+        setStatus(`Saved image for "${state.title}".`);
       }catch(error){
         console.error(error);
-        setStatus("บันทึกรูปไม่สำเร็จ พื้นที่จัดเก็บของ Safari อาจเต็ม");
+        setStatus("Could not save the image. Safari storage may be full.");
       }
     });
 
@@ -1225,7 +1221,7 @@ function extensionFromFile(filename, mime, category){
 
       const allowed = file.type.startsWith("audio/") || /\.(mp3|m4a|wav|aac|ogg)$/i.test(file.name);
       if(!allowed){
-        alert("กรุณาเลือกไฟล์ MP3, M4A, WAV, AAC หรือ OGG");
+        alert("Please select an MP3, M4A, WAV, AAC, or OGG audio file.");
         audioInput.value = "";
         return;
       }
@@ -1234,15 +1230,15 @@ function extensionFromFile(filename, mime, category){
 
       try{
         await persist();
-        setStatus(`บันทึกเสียงของ "${state.title}" แล้ว`);
+        setStatus(`Saved audio for "${state.title}".`);
       }catch(error){
         console.error(error);
-        setStatus("บันทึกเสียงไม่สำเร็จ ลองใช้ไฟล์เสียงขนาดเล็กลง");
+        setStatus("Could not save the audio. Try a smaller audio file.");
       }
     });
 
     clearBtn.addEventListener("click", async () => {
-      if(!confirm(`ล้างรูปและเสียงของ "${state.title}" หรือไม่?`)) return;
+      if(!confirm(`Clear the image and audio for "${state.title}"?`)) return;
 
       setTitle(defaultTitle);
       setFavorite(false);
@@ -1254,10 +1250,10 @@ function extensionFromFile(filename, mime, category){
 
       try{
         await dbDelete(id);
-        setStatus(`ล้างปุ่ม ${index + 1} แล้ว`);
+        setStatus(`Cleared button ${index + 1}.`);
       }catch(error){
         console.error(error);
-        setStatus("ล้างข้อมูลไม่สำเร็จ");
+        setStatus("Could not clear data.");
       }
     });
 
@@ -1320,15 +1316,15 @@ function extensionFromFile(filename, mime, category){
 
   editModeBtn.addEventListener("click", () => {
     editMode = !editMode;
-    editModeBtn.textContent = editMode ? "ปิดโหมดแก้ไข" : "เปิดโหมดแก้ไข";
+    editModeBtn.textContent = editMode ? "Close Edit Mode" : "Edit";
 
     if(!editMode){
       document.querySelectorAll(".pad-card.editor-open").forEach(card => {
         card.classList.remove("editor-open");
       });
-      setStatus("ปิดโหมดแก้ไขแล้ว");
+      setStatus("Edit mode closed");
     }else{
-      setStatus("กดปุ่มรูปเฟืองใต้ปุ่มที่ต้องการตั้งค่า");
+      setStatus("Tap the settings button under the item you want to edit.");
     }
   });
 
@@ -1354,7 +1350,7 @@ function extensionFromFile(filename, mime, category){
   stopBtn.addEventListener("click", () => stopAll(true));
 
   clearAllBtn.addEventListener("click", async () => {
-    if(!confirm("ล้างชื่อ รูป และเสียงของทุกปุ่มหรือไม่?")) return;
+    if(!confirm("Clear the names, images, and sounds for all buttons?")) return;
 
     stopAll(false);
 
@@ -1380,8 +1376,8 @@ function extensionFromFile(filename, mime, category){
         state.soundPad.style.backgroundImage = "";
         state.soundPad.classList.remove("has-image", "playing");
         state.number.hidden = false;
-        state.imageName.textContent = "ยังไม่ได้เลือกรูป";
-        state.audioName.textContent = "ยังไม่ได้เลือกเสียง";
+        state.imageName.textContent = "No image selected";
+        state.audioName.textContent = "No audio selected";
         state.imageInput.value = "";
         state.audioInput.value = "";
         state.audio.pause();
@@ -1390,10 +1386,10 @@ function extensionFromFile(filename, mime, category){
         state.card.classList.remove("editor-open");
       }
 
-      setStatus("ล้างข้อมูลทั้งหมดแล้ว");
+      setStatus("All data cleared.");
     }catch(error){
       console.error(error);
-      setStatus("ล้างข้อมูลทั้งหมดไม่สำเร็จ");
+      setStatus("Could not clear all data.");
     }
   });
 
@@ -1409,8 +1405,8 @@ function extensionFromFile(filename, mime, category){
 
   Promise.all(Array.from(states.values()).map(() => Promise.resolve()))
     .then(() => setTimeout(() => {
-      if(statusEl.textContent === "กำลังโหลดข้อมูล…"){
-        setStatus("พร้อมใช้งาน");
+      if(statusEl.textContent === "Loading data…"){
+        setStatus("Ready");
       }
     }, 600));
 })();
@@ -1426,7 +1422,7 @@ function extensionFromFile(filename, mime, category){
   if(!editButton || editButton.dataset.passwordProtected === "1") return;
 
   editButton.dataset.passwordProtected = "1";
-  editButton.textContent = "แก้ไข";
+  editButton.textContent = "Edit";
 
   document.querySelectorAll(".number").forEach(element => element.remove());
   document.querySelectorAll(".pad-title").forEach(element => {
@@ -1447,7 +1443,7 @@ function extensionFromFile(filename, mime, category){
     passThrough = true;
     editButton.click();
     window.setTimeout(() => {
-      editButton.textContent = "ปิดการแก้ไข";
+      editButton.textContent = "Close Edit Mode";
     }, 0);
   }
 
@@ -1457,7 +1453,7 @@ function extensionFromFile(filename, mime, category){
     passThrough = true;
     editButton.click();
     window.setTimeout(() => {
-      editButton.textContent = "แก้ไข";
+      editButton.textContent = "Edit";
     }, 0);
   }
 
@@ -1475,11 +1471,11 @@ function extensionFromFile(filename, mime, category){
       return;
     }
 
-    const entered = window.prompt("กรุณาใส่รหัสเพื่อแก้ไข");
+    const entered = window.prompt("Enter the password to edit");
     if(entered === null) return;
 
     if(entered !== PASSWORD){
-      window.alert("รหัสไม่ถูกต้อง");
+      window.alert("Incorrect password");
       return;
     }
 
