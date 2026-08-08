@@ -1,80 +1,101 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T04:29:22.024Z",
+  "generatedAt": "2026-08-08T08:32:08.471Z",
   "pads": {
     "pad-1": {
-      "title": "Gossiping",
+      "title": "Hi  voice",
       "favorite": false,
       "image": "media/pad-1.jpg",
       "audio": "media/pad-1.mp3"
     },
     "pad-2": {
-      "title": "Sleeping",
+      "title": "lound trumpet",
       "favorite": false,
       "image": "media/pad-2.jpg",
       "audio": "media/pad-2.mp3"
     },
     "pad-3": {
-      "title": "Calling each \nother",
+      "title": "short trumpet",
       "favorite": false,
       "image": "media/pad-3.jpg",
       "audio": "media/pad-3.mp3"
     },
     "pad-4": {
-      "title": "Singing",
+      "title": "Calling herd",
       "favorite": false,
       "image": "media/pad-4.jpg",
       "audio": "media/pad-4.mp3"
     },
     "pad-5": {
-      "title": "Shouting",
+      "title": "Mom calls a baby",
       "favorite": false,
       "image": "media/pad-5.jpg",
       "audio": "media/pad-5.mp3"
     },
     "pad-6": {
-      "title": "ปุ่มเสียง 6",
-      "favorite": false
+      "title": "A baby calls mom",
+      "favorite": false,
+      "image": "media/pad-6.jpg",
+      "audio": "media/pad-6.mp3"
     },
     "pad-7": {
-      "title": "ปุ่มเสียง 7",
-      "favorite": false
+      "title": "Rumbles",
+      "favorite": false,
+      "image": "media/pad-7.jpg",
+      "audio": "media/pad-7.mp3"
     },
     "pad-8": {
-      "title": "Sound Button 8",
-      "favorite": false
+      "title": "Gossip",
+      "favorite": false,
+      "image": "media/pad-8.jpg",
+      "audio": "media/pad-8.mp3"
     },
     "pad-9": {
-      "title": "ปุ่มเสียง 9",
-      "favorite": false
+      "title": "Warn danger",
+      "favorite": false,
+      "image": "media/pad-9.jpg",
+      "audio": "media/pad-9.mp3"
     },
     "pad-10": {
-      "title": "ปุ่มเสียง 10",
-      "favorite": false
+      "title": "shock",
+      "favorite": false,
+      "image": "media/pad-10.jpg",
+      "audio": "media/pad-10.mp3"
     },
     "pad-11": {
-      "title": "ปุ่มเสียง 11",
-      "favorite": false
+      "title": "not saticfied",
+      "favorite": false,
+      "image": "media/pad-11.jpg",
+      "audio": "media/pad-11.mp3"
     },
     "pad-12": {
-      "title": "ปุ่มเสียง 12",
-      "favorite": false
+      "title": "excited and happy",
+      "favorite": false,
+      "image": "media/pad-12.jpg",
+      "audio": "media/pad-12.mp3"
     },
     "pad-13": {
-      "title": "ปุ่มเสียง 13",
-      "favorite": false
+      "title": "play muddy",
+      "favorite": false,
+      "image": "media/pad-13.jpg",
+      "audio": "media/pad-13.mp3"
     },
     "pad-14": {
-      "title": "ปุ่มเสียง 14",
-      "favorite": false
+      "title": "Playing in the water",
+      "favorite": false,
+      "audio": "media/pad-14.mp3"
     },
     "pad-15": {
-      "title": "ปุ่มเสียง 15",
-      "favorite": false
+      "title": "Suction and exhaust",
+      "favorite": false,
+      "image": "media/pad-15.jpg",
+      "audio": "media/pad-15.mp3"
     },
     "pad-16": {
-      "title": "ปุ่มเสียง 16",
-      "favorite": false
+      "title": "many elephant sound",
+      "favorite": false,
+      "image": "media/pad-16.jpg",
+      "audio": "media/pad-16.mp3"
     },
     "pad-17": {
       "title": "ปุ่มเสียง 17",
